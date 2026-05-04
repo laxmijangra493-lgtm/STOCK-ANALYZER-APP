@@ -1,56 +1,68 @@
-# this is for database storage and user information:-
 import sqlite3
 import bcrypt
+import os
 
-# ---------------------------
-# 📌 DB CONNECTION
-# ---------------------------
+DB_NAME = "users.db"
 
-conn = sqlite3.connect("users.db", check_same_thread=False)
-c = conn.cursor()
+def get_conn():
+    """Always return a fresh connection (thread-safe)."""
+    conn = sqlite3.connect(DB_NAME, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    return conn
 
-# ---------------------------
-# 📌 CREATE TABLE
-# ---------------------------
+def init_db():
+    """Create tables if they don't exist."""
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id       INTEGER PRIMARY KEY AUTOINCREMENT,
+            name     TEXT    NOT NULL,
+            mobile   TEXT,
+            email    TEXT    UNIQUE NOT NULL,
+            password TEXT    NOT NULL
+        )
+    """)
+    # Fixed schema: composite PK so one user can have many symbols
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS watchlist (
+            user_id INTEGER NOT NULL,
+            symbol  TEXT    NOT NULL,
+            PRIMARY KEY (user_id, symbol),
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+    conn.commit()
+    conn.close()
 
-c.execute("""
-CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    mobile TEXT,
-    email TEXT UNIQUE,
-    password TEXT
-)
-""")
-conn.commit()
+init_db()
 
-# ---------------------------
-# 📌 REGISTER USER
-# ---------------------------
+
 def register_user(name, mobile, email, password):
-    hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-
+    """Returns True on success, False if email already exists."""
+    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
     try:
-        c.execute(
+        conn = get_conn()
+        conn.execute(
             "INSERT INTO users (name, mobile, email, password) VALUES (?, ?, ?, ?)",
-            (name, mobile, email, hashed)
+            (name.strip(), mobile.strip(), email.strip().lower(), hashed)
         )
         conn.commit()
+        conn.close()
         return True
-
     except sqlite3.IntegrityError:
         return False
 
 
-# ---------------------------
-# 📌 LOGIN USER
-# ---------------------------
 def login_user(email, password):
-    c.execute("SELECT password FROM users WHERE email = ?", (email,))
-    result = c.fetchone()
+    """Returns (user_id, name) on success, (None, None) on failure."""
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id, name, password FROM users WHERE email = ?",
+        (email.strip().lower(),)
+    ).fetchone()
+    conn.close()
 
-    if result:
-        stored_password = result[0].encode('utf-8')
-        return bcrypt.checkpw(password.encode('utf-8'), stored_password)
-
-    return False
+    if row and bcrypt.checkpw(password.encode(), row["password"].encode()):
+        return row["id"], row["name"]
+    return None, None

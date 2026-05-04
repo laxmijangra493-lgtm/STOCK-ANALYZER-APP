@@ -1,3 +1,4 @@
+#  this is for dashboard:-
 
 import streamlit as st
 import plotly.graph_objects as go
@@ -99,9 +100,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- Header ---
-st.markdown('<div class="title">QuantIQ 📊</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Smart Stock Analysis & Market Intelligence Platform</div>', unsafe_allow_html=True)
+
 
 # --- Feature Cards ---
 col1, col2, col3 = st.columns(3)
@@ -220,10 +219,10 @@ if not st.session_state["logged_in"]:
 # 📊 DASHBOARD
 # ---------------------------
 else:
-    col_left, col_right = st.columns([8, 1])
+    col_left, col_right = st.columns([8, 4])
 
     with col_left:
-        st.success("✅ Welcome to QuantIQ Dashboard")
+        st.success("✅ Welcome to Analyzr Dashboard")
 
     with col_right:
         if st.button("Logout"):
@@ -244,10 +243,25 @@ else:
             high=data_stock['High'],
             low=data_stock['Low'],
             close=data_stock['Close'],
-            increasing_line_color='#00ff00', 
+            increasing_line_color="#33e433", 
             decreasing_line_color='#ff0000'  
             ))
+        fig.update_layout(hovermode = 'x unified')
 
+        fig.update_xaxes(
+            showspikes = True,
+            spikemode = 'across',
+            spikesnap = 'cursor'
+        )
+
+        fig.update_yaxes(
+            showspikes = True,
+            spikemode = 'across',
+            spikesnap = 'cursor'
+        )
+
+
+    
         # 4. Update the layout
         fig.update_layout(
             title="NIFTY 50",
@@ -273,7 +287,7 @@ else:
 
     st.markdown("### 🔍 Search Stocks")
 
-    search_col1, search_col2 = st.columns([8, 2])
+    search_col1, search_col2  = st.columns([6 , 3])
 
     with search_col1:
         stock_input = st.text_input(
@@ -284,6 +298,10 @@ else:
     with search_col2:
         search_btn = st.button("Search")
 
+    # with watchlistcol3:
+        # watchlist_btn = st.button("<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-icon lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>  Watchlist")
+
+
     # Default stock
     if "stock_symbol" not in st.session_state:
         st.session_state["stock_symbol"] = "^NSEI"
@@ -291,7 +309,7 @@ else:
     # When user searches
     if search_btn and stock_input:
         st.session_state["stock_symbol"] = stock_input.upper()
-
+    # if
     # ---------------------------
     # 📈 LOAD STOCK DATA
     # ---------------------------
@@ -299,43 +317,72 @@ else:
     
     # FIXED: Initialize data_stock here to prevent NameError on failure
     data_stock = pd.DataFrame() 
+    timeframe = st.selectbox(
+        "Select Timeframe",
+        ["1d" , "5d" , "1mo" , "6mo" , "1y" , "5y"]
+    )  
 
+    interval_map = {
+    "1d": "5m",
+    "5d": "15m",
+    "1mo": "30m",
+    "6mo": "1h",
+    "1y": "1d",
+    "5y": "1wk"
+    }
     try:
+
+        
         stock = yf.Ticker(symbol)
-        data_stock = stock.history(period="5d", interval="5m")
+        data_stock = stock.history(period=timeframe, interval=interval_map[timeframe])
+        data_stock = data_stock.tail(1000)
 
         if data_stock.empty:
             st.warning("⚠️ No data found. Try a valid symbol like RELIANCE.NS")
         else:
             # ---------------------------
             # 📊 CHART
-            # ---------------------------
+            # --------------------------
             fig = go.Figure()
-
             fig.add_trace(go.Candlestick(
-                x=data_stock.index,
-                open=data_stock['Open'],
-                high=data_stock['High'],
-                low=data_stock['Low'],
-                close=data_stock['Close'],
-                increasing_line_color='#00ff00',
-                decreasing_line_color='#ff0000'
-            ))
+                        x=data_stock.index,
+                        open=data_stock['Open'],
+                        high=data_stock['High'],
+                        low=data_stock['Low'],
+                        close=data_stock['Close'],
+                        increasing_line_color='#00ff00',
+                        decreasing_line_color='#ff0000'
+                        ))
+                # fig.update_layout(hovermode = 'x unified')
+
+                # fig.update_xaxes(
+                #     showspikes = True,
+                #     spikemode = 'across',
+                #     spikesnap = 'cursor'
+                #     )
+
+                # fig.update_yaxes(
+                #     showspikes = True,
+                #     spikemode = 'across',
+                #     spikesnap = 'cursor'
+                #     )
+
+                # fig = go.Figure()
 
             fig.update_layout(
-                title=f"{symbol} Chart",
-                xaxis_title="Time",
-                yaxis_title="Price",
-                xaxis_rangeslider_visible=False,
-                template="plotly_dark"
-            )
+                        title=f"{symbol} Chart",
+                    xaxis_title="Time",
+                    yaxis_title="Price",
+                    xaxis_rangeslider_visible=False,
+                    template="plotly_dark"
+                    )
 
             fig.update_xaxes(
-                rangebreaks=[
-                    dict(bounds=["sat", "mon"]),
-                    dict(bounds=[15.5, 9.25], pattern="hour"),
-                ]
-            )
+                    rangebreaks=[
+                        dict(bounds=["sat", "mon"]),
+                        dict(bounds=[15.5, 9.25], pattern="hour"),
+                    ]
+                )
 
             st.plotly_chart(fig, use_container_width=True)
 
@@ -347,13 +394,13 @@ else:
             col1 , col2 , col3 = st.columns(3)
 
             with col1:
-                st.metric("P/E Ratio", info.get("trailingPE", "N/A"))
+                        st.metric("P/E Ratio", info.get("trailingPE", "N/A"))
 
             with col2:
-                st.metric("EPS", info.get("trailingEps", "N/A"))
+                        st.metric("EPS", info.get("trailingEps", "N/A"))
             
             with col3:
-                st.metric("Market Cap", info.get("marketCap", "N/A"))
+                        st.metric("Market Cap", info.get("marketCap", "N/A"))
 
     except Exception as e:
         st.error(f"Error loading stock: {e}")
@@ -362,44 +409,107 @@ else:
     # 📉 RSI INDICATOR (SEPARATE PANEL BELOW CHART)
     # ---------------------------
 
-    def calculate_rsi(data, period=14):
-        delta = data['Close'].diff()
+    # def calculate_rsi(data, period=14):
+    #     delta = data['Close'].diff()
+
+    #     gain = delta.clip(lower=0)
+    #     loss = -delta.clip(upper=0)
+
+    #     avg_gain = gain.ewm(alpha=1/period,min_periods = period ,adjust=True).mean()
+    #     avg_loss = loss.ewm(alpha=1/period,min_periods = period, adjust=True).mean()
+
+    #     rs = avg_gain / avg_loss
+    #     rsi = 100 - (100 / (1 + rs))
+
+    #     return rsi
+    def calculate_rsi_tv(close, period=14):
+        delta = close.diff()
 
         gain = delta.clip(lower=0)
         loss = -delta.clip(upper=0)
 
-        avg_gain = gain.ewm(alpha=1/period, adjust=False).mean()
-        avg_loss = loss.ewm(alpha=1/period, adjust=False).mean()
+    # First average (SMA)
+        avg_gain = gain.rolling(window=period).mean()
+        avg_loss = loss.rolling(window=period).mean()
 
-        rs = avg_gain / avg_loss
-        rsi = 100 - (100 / (1 + rs))
+        rsi = close.copy()
+        rsi[:] = None
+
+    # Start from first valid index
+        for i in range(period, len(close)):
+            if i == period:
+            # first value already from SMA
+                current_gain = avg_gain.iloc[i]
+                current_loss = avg_loss.iloc[i]
+            else:
+            # Wilder smoothing
+                current_gain = (avg_gain.iloc[i-1] * (period - 1) + gain.iloc[i]) / period
+                current_loss = (avg_loss.iloc[i-1] * (period - 1) + loss.iloc[i]) / period
+
+                avg_gain.iloc[i] = current_gain
+                avg_loss.iloc[i] = current_loss
+
+        # Avoid division by zero
+            if current_loss == 0:
+                rsi.iloc[i] = 100
+            else:
+                rs = current_gain / current_loss
+                rsi.iloc[i] = 100 - (100 / (1 + rs))
 
         return rsi
-
     if data_stock.empty:
         st.warning("⚠️ No data found")
     else:
 
-        data_stock['RSI'] = calculate_rsi(data_stock)
+        data_stock['RSI'] = calculate_rsi_tv(data_stock['Close'])
 
         rsi_fig = go.Figure()
-
         rsi_fig.add_trace(go.Scatter(
-            x=data_stock.index,
-            y=data_stock['RSI'],
-            mode='lines',
-            name='RSI',
-            line=dict(color='cyan', width=2)
-        ))
+        x=data_stock.index,
+        y=data_stock['RSI'],
+        mode='lines',
+        name='RSI',
+        line=dict(color='#00FFFF', width=2)
+            ))
 
+# Zones
+        rsi_fig.add_hrect(y0=70, y1=100, fillcolor="red", opacity=0.1, line_width=0)
+        rsi_fig.add_hrect(y0=0, y1=30, fillcolor="green", opacity=0.1, line_width=0)
+
+# Levels
         rsi_fig.add_hline(y=70, line_dash="dash", line_color="red")
+        rsi_fig.add_hline(y=50, line_dash="dot", line_color="gray")
         rsi_fig.add_hline(y=30, line_dash="dash", line_color="green")
 
         rsi_fig.update_layout(
-        title=f"{symbol} RSI (14)",
-        template="plotly_dark",
-        height=250,
-        margin=dict(l=10, r=10, t=40, b=10)
-        )
+            title=f"{symbol} RSI (14)",
+            template="plotly_dark",
+            height=250,
+            margin=dict(l=10, r=10, t=40, b=10)
+            )
 
         st.plotly_chart(rsi_fig, use_container_width=True)
+
+        # rsi_fig.add_trace(go.Scatter(
+        #     x=data_stock.index,
+        #     y=data_stock['RSI'],
+        #     mode='lines',
+        #     name='RSI',
+        #     line=dict(color='cyan', width=2)
+        # ))
+
+        # rsi_fig.add_hline(y=70, line_dash="dash", line_color="red")
+        # rsi_fig.add_hline(y=30, line_dash="dash", line_color="green")
+
+        # rsi_fig.update_layout(
+        # title=f"{symbol} RSI (14)",
+        # template="plotly_dark",
+        # height=250,
+        # margin=dict(l=10, r=10, t=40, b=10)
+        # )
+
+        # st.plotly_chart(rsi_fig, use_container_width=True)
+
+
+
+# python -m streamlit run app.py

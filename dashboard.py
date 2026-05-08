@@ -226,13 +226,13 @@ else:
         plot_bgcolor="rgba(0,0,0,0)",
     )
     fig.update_xaxes(
-        showspikes=True, spikemode="across", spikesnap="cursor",
+        showspikes=True, spikemode="across", spikesnap="cursor", spikethickness=0.5, spikedash="dot" ,        
         rangebreaks=[
             dict(bounds=["sat", "mon"]),
             dict(bounds=[15.5, 9.25], pattern="hour"),
         ]
     )
-    fig.update_yaxes(showspikes=True, spikemode="across", spikesnap="cursor")
+    fig.update_yaxes(showspikes=True, spikemode="across", spikesnap="cursor",  spikethickness=0.5, spikedash="dot")
     st.plotly_chart(fig, use_container_width=True)
 
     # ── Stock info metrics ────────────────────────────────────────────────────

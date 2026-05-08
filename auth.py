@@ -66,3 +66,6 @@ def login_user(email, password):
     if row and bcrypt.checkpw(password.encode(), row["password"].encode()):
         return row["id"], row["name"]
     return None, None
+
+
+
